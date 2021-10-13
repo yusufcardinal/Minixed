@@ -1,4 +1,16 @@
-<?php
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="/fmaf/scripts/filmalafiche.css">
+<title>Le chill crib</title>
+</head>
+
+<body>
+<div class="null"></div>
+<div class="content">
+	
+	<?php
 
 	// MINIXED is a minimal but nice-looking PHP directory indexer.
 	// More at https://github.com/lorenzos/Minixed
@@ -7,20 +19,20 @@
 	// Configuration                
 	// =============================
 	
-	$browseDirectories = false; // Navigate into sub-folders
-	$title = 'Index of {{path}}';
-	$subtitle = '{{files}} objects in this folder, {{size}} total'; // Empty to disable
-	$breadcrumbs = false; // Make links in {{path}}
+	$browseDirectories = true; // Navigate into sub-folders
+	$title = 'Sélection de la vidéo';
+	$subtitle = ' '; // Empty to disable
+	$breadcrumbs = true; // Make links in {{path}}
 	$showParent = false; // Display a (parent directory) link
 	$showDirectories = true;
 	$showDirectoriesFirst = true; // Lists directories first when sorting by name
 	$showHiddenFiles = false; // Display files starting with "." too
-	$alignment = 'left'; // You can use 'left' or 'center'
+	$alignment = 'center'; // You can use 'left' or 'center'
 	$showIcons = true;
 	$dateFormat = 'd/m/y H:i'; // Used in date() function
 	$sizeDecimals = 1;
 	$robots = 'noindex, nofollow'; // Avoid robots by default
-	$showFooter = true; // Display the "Powered by" footer
+	$showFooter = false; // Display the "Powered by" footer
 	$openIndex = $browseDirectories && true; // Open index files present in the current directory if $browseDirectories is enabled
 	$browseDefault = null; // Start on a different "default" directory if $browseDirectories is enabled
 	
@@ -30,6 +42,12 @@
 	// Who am I?
 	$_self = basename($_SERVER['PHP_SELF']);
 	$_path = str_replace('\\', '/', dirname($_SERVER['PHP_SELF']));
+	$maindir = '/fmaf/';
+	$relpath = str_replace($maindir, '', $_path);
+	$_relpath = '/mnt/d/medias/' . $relpath;
+	$a_relpath = '/medias/' . $relpath;
+	echo $_relpath ."<br>";
+	echo $a_relpath;
 	$_total = 0;
 	$_total_size = 0;
 	
@@ -39,7 +57,9 @@
 		if (!empty($browseDefault) && !isset($_GET['b'])) $_GET['b'] = $browseDefault;
 		$_GET['b'] = trim(str_replace('\\', '/', @$_GET['b']), '/ ');
 		$_GET['b'] = str_replace(array('/..', '../'), '', @$_GET['b']); // Avoid going up into filesystem
-		if (!empty($_GET['b']) && $_GET['b'] != '..' && is_dir($_GET['b'])) $_browse = $_GET['b'];
+		if (!empty($_GET['b']) && $_GET['b'] != '..' && is_dir($_GET['b'])) {
+			$_browse = $_GET['b'];
+	}
 	}
 	
 	// Index open
@@ -87,8 +107,9 @@
 	}
 	
 	// Get the list of files
-	$items = ls('.' . (empty($_browse) ? '' : '/' . $_browse), $showDirectories, $showHiddenFiles);
+	$items = ls($_relpath, $showDirectories, $showHiddenFiles);
 	
+
 	// Sort it
 	function sortByName($a, $b) { global $showDirectoriesFirst; return ($a['isdir'] == $b['isdir'] || !$showDirectoriesFirst ? strtolower($a['name']) > strtolower($b['name']) : $a['isdir'] < $b['isdir']); }
 	function sortBySize($a, $b) { return ($a['isdir'] == $b['isdir'] ? $a['size'] > $b['size'] : $a['isdir'] < $b['isdir']); }
@@ -130,9 +151,9 @@
 	
 	// Titles parser
 	function getTitleHTML($title, $breadcrumbs = false) {
-		global $_path, $_browse, $_total, $_total_size, $sizeDecimals;
+		global $_relpath, $_browse, $_total, $_total_size, $sizeDecimals;
 		$title = htmlentities(str_replace(array('{{files}}', '{{size}}'), array($_total, humanizeFilesize($_total_size, $sizeDecimals)), $title));
-		$path = htmlentities($_path);
+		$path = htmlentities($_relpath);
 		if ($breadcrumbs) $path = sprintf('<a href="%s">%s</a>', htmlentities(buildLink(array('b' => ''))), $path);
 		if (!empty($_browse)) {
 			if ($_path != '/') $path .= '/';
@@ -155,7 +176,7 @@
 		$params = $_GET;
 		foreach ($changes as $k => $v) if (is_null($v)) unset($params[$k]); else $params[$k] = $v;
 		foreach ($params as $k => $v) $params[$k] = urlencode($k) . '=' . urlencode($v);
-		return empty($params) ? $_self : $_self . '?' . implode('&', $params);
+		return empty($params) ? $_self : $_self . '?' . implode($params, '&');
 	}
 
 ?>
@@ -199,29 +220,35 @@
 			margin: 0 20px;
 		}
 		
+
+		span {
+			color:#ffffff;
+		}
+
 		h1 {
 			font-size: 21px;
 			padding: 0 10px;
 			margin: 20px 0 0;
 			font-weight: bold;
+			color:#ffffff;
 		}
 		
 		h2 {
 			font-size: 14px;
 			padding: 0 10px;
 			margin: 10px 0 0;
-			color: #999999;
+			color:#cc6699;
 			font-weight: normal;
 		}
 		
 		a {
-			color: #003399;
+			color: #FFFFFF;
 			text-decoration: none;
 		}
 		
 		a:hover {
-			color: #0066cc;
-			text-decoration: underline;
+			color: #000000;
+			font-style: oblique;
 		}
 		
 		ul#header {	
@@ -366,12 +393,12 @@
 					<?php
 						if ($item['isdir'] && $browseDirectories && !@$item['isparent']) {
 							if ($item['name'] == '..') {
-								$itemURL = buildLink(array('b' => substr($_browse, 0, strrpos($_browse, '/'))));
+								$itemURL = buildLink(array('b' => substr($a_relpath, 0, strrpos($a_relpath, '/'))));
 							} else {
-								$itemURL = buildLink(array('b' => (empty($_browse) ? '' : (string)$_browse . '/') . $item['name']));
+								$itemURL = buildLink(array('b' => (empty($a_relpath) ? '' : (string)$a_relpath . '/') . $item['name']));
 							}
 						} else {
-							$itemURL = (empty($_browse) ? '' : str_replace(['%2F', '%2f'], '/', rawurlencode((string)$_browse)) . '/') . rawurlencode($item['name']);
+							$itemURL = (empty($a_relpath) ? '' : (string)$a_relpath . '/') . $item['name'];
 						}
 					?>
 					
@@ -392,6 +419,8 @@
 		<?php endif; ?>
 		
 	</div>
-	
+	</div>
+
+
 </body>
 </html>
